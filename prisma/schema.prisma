@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrderStatus {
+  pending
+  completed
+  canceled
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  cart      Cart?
+  orders    Order[]
+
+  @@map("users")
+}
+
+model Book {
+  id          String      @id @default(uuid())
+  isbn        String      @unique
+  title       String
+  author      String
+  description String
+  publishDate DateTime    @map("publish_date")
+  price       Float       @default(0)
+  stock       Int         @default(0)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+
+  @@map("books")
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  user      User       @relation(fields: [userId], references: [id])
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  userId    String     @unique @map("user_id")
+  items     CartItem[]
+
+  @@map("cart")
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  quantity  Int
+  book      Book     @relation(fields: [bookId], references: [id])
+  cart      Cart     @relation(fields: [cartId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  bookId    String   @map("book_id")
+  cartId    String   @map("cart_id")
+
+  @@unique([cartId, bookId])
+  @@map("cart_items")
+}
+
+model Order {
+  id        String      @id @default(uuid())
+  total     Float
+  status    OrderStatus @default(pending)
+  user      User        @relation(fields: [userId], references: [id])
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  userId    String      @map("user_id")
+  items     OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  quantity  Int
+  book      Book     @relation(fields: [bookId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  bookId    String   @map("book_id")
+  orderId   String   @map("order_id")
+
+  @@map("order_items")
+}
